@@ -1,0 +1,493 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>Wendell&#39;s Blog</title>
+  <meta name="author" content="Wendell">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="Wendell&#39;s Blog">
+
+  
+    <meta property="og:image" content="">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Wendell&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="https://oindk07nf.qnssl.com/atom-one-dark.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+</html>
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Wendell&#39;s Blog</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/">About</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-12-06T11:00:00.000Z"><a href="/2018/12/06/数据结构与算法之二：链表/">2018-12-06</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/12/06/数据结构与算法之二：链表/">数据结构与算法之二：链表</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h1><p>线性数据结构包括：动态数组、栈、队列和链表。其中动态数组、栈和队列底层都是依托静态数组，依靠 resize 解决固定容量的问题。</p>
+<p>链表（Linked List）是一种常见的基础数据结构，也是真正的动态数据结构。它是一种线性表，但是并不会按线性的顺序存储数据，而是在每一个结点（Node）里存储下一个结点的指针（Pointer），不需要处理固定容量的问题。由于不必按顺序存储，链表在插入的时候可以达到 <code>O(1)</code> 的复杂度，比另一种线性表要快得多。但是链表丧失了随机访问的能力，在查找一个结点或者访问特定编号的结点则需要 <code>O(n)</code> 的时间，而顺序表相应的时间复杂度分别是 <code>O(logn)</code> 和 <code>O(1)</code>。</p>
+<h1 id="二、代码实现"><a href="#二、代码实现" class="headerlink" title="二、代码实现"></a>二、代码实现</h1><h3 id="1-结点-Node"><a href="#1-结点-Node" class="headerlink" title="1. 结点 Node"></a>1. 结点 Node</h3><p>首先我们先定义结点的数据结构：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Node</span>&lt;<span class="title">Element</span>: <span class="title">Equatable</span>&gt;: <span class="title">CustomStringConvertible</span> </span>&#123;</span><br><span class="line">    <span class="keyword">var</span> value: <span class="type">Element</span>?</span><br><span class="line">    <span class="keyword">var</span> next: <span class="type">Node</span>?</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">init</span>(value: <span class="type">Element</span>, next: <span class="type">Node</span>?) &#123;</span><br><span class="line">        <span class="keyword">self</span>.value = value</span><br><span class="line">        <span class="keyword">self</span>.next = next</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">convenience</span> <span class="keyword">init</span>(value: <span class="type">Element</span>) &#123;</span><br><span class="line">        <span class="keyword">self</span>.<span class="keyword">init</span>(value: value, next: <span class="literal">nil</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">var</span> description: <span class="type">String</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">"\(value)"</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>为了让结点 Node 更加有用，更灵活，而不只存储单一类型的值，我们使用泛型来解决类型约束的问题。Node 中有两个成员变量：<code>value</code>（存储结点的值）和 <code>next</code>（指向下一结点）。</p>
+<p>接下来定义链表的数据结构。</p>
+<h3 id="2-链表"><a href="#2-链表" class="headerlink" title="2. 链表"></a>2. 链表</h3><p>一般情况下，我们会把链表的第一个结点看作是头结点，这也是很正常的想法，那么链表的结构就如下图：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190120005527.png" alt=""></p>
+<p>但为链表在任意位置添加元素的时候，在链表头和链表尾添加结点，逻辑上会有差别。因为在为链表添加结点的时候，需要知道待添加结点位置的前一个结点，对于头结点来说，它没有前面那个结点，所以在逻辑上会特殊一些，对应代码就需要多一个判断，这样代码就不够优雅和整洁。所以我们引入一个虚拟头结点（dummyHead），虚拟头结点定义为内容为空的结点，那么链表的结构就变成如下图：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190120005542.png" alt=""></p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LinkedList</span>&lt;<span class="title">Element</span>: <span class="title">Equatable</span>&gt;: <span class="title">CustomStringConvertible</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 引入虚拟头节点</span></span><br><span class="line">    <span class="keyword">fileprivate</span> <span class="keyword">var</span> dumyHead: <span class="type">Node</span>&lt;<span class="type">Element</span>&gt;</span><br><span class="line">    <span class="comment">// 记录链表的元素</span></span><br><span class="line">    <span class="keyword">fileprivate</span> <span class="keyword">var</span> size: <span class="type">Int</span></span><br><span class="line">    </span><br><span class="line">    <span class="keyword">init</span>() &#123;</span><br><span class="line">        <span class="comment">// 虚拟头节点不应该为空，而是一个元素为空，next也为空的节点</span></span><br><span class="line">        dumyHead = <span class="type">Node</span>()</span><br><span class="line">        size = <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 获取链表中的元素个数</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> size</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 判断链表是否为空</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> size == <span class="number">0</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">var</span> description: <span class="type">String</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> result = <span class="string">""</span></span><br><span class="line">        <span class="keyword">var</span> currentNode = dumyHead.next</span><br><span class="line">        <span class="keyword">while</span> currentNode != <span class="literal">nil</span> &#123;</span><br><span class="line">            result += <span class="string">"\(currentNode!.value!)-&gt;"</span></span><br><span class="line">            currentNode = currentNode!.next</span><br><span class="line">        &#125;</span><br><span class="line">        result.append(<span class="string">"nill"</span>)</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="3-插入"><a href="#3-插入" class="headerlink" title="3. 插入"></a>3. 插入</h3><figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">extension</span> <span class="title">LinkedList</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 在链表的任意位置添加新的元素e</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">add</span><span class="params">(index: Int, e: Element)</span></span> &#123;</span><br><span class="line">        <span class="keyword">guard</span> index &gt;= <span class="number">0</span> &amp;&amp; index &lt;= size <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">fatalError</span>(<span class="string">"Add failed. Illegal index."</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 待插入元素位置的前一个结点</span></span><br><span class="line">        <span class="keyword">var</span> preNode = dumyHead</span><br><span class="line">        <span class="keyword">for</span> <span class="number">_</span> <span class="keyword">in</span> <span class="number">0</span>..&lt;index &#123;</span><br><span class="line">            preNode = preNode.next!</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">let</span> tempNode = <span class="type">Node</span>(value: e)</span><br><span class="line">        tempNode.next = preNode.next</span><br><span class="line">        preNode.next = tempNode</span><br><span class="line">        </span><br><span class="line">        size += <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 在链表头添加新的元素e</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">addFirst</span><span class="params">(e: Element)</span></span> &#123;</span><br><span class="line">        add(index: <span class="number">0</span>, e: e)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 在链表末尾添加新的元素e</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">addLast</span><span class="params">(e: Element)</span></span> &#123;</span><br><span class="line">        add(index: size, e: e)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>对于上面插入操作需要注意两点：</p>
+<ul>
+<li><p>结点赋值顺序很重要</p>
+</li>
+<li><p>赋值代码可以如下精简：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">preNode.next = <span class="type">Node</span>(value: e, next: preNode.next)</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h3 id="4-遍历、查询和修改"><a href="#4-遍历、查询和修改" class="headerlink" title="4. 遍历、查询和修改"></a>4. 遍历、查询和修改</h3><figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// 获得链表的第index个位置的元素</span></span><br><span class="line"><span class="class"><span class="keyword">extension</span> <span class="title">LinkedList</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 在链表中不是一个常用的操作</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">get</span><span class="params">(index: Int)</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">guard</span> index &gt;= <span class="number">0</span> &amp;&amp; index &lt; size <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">fatalError</span>(<span class="string">"Get failed. Illegal index."</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">var</span> currentNode = dumyHead.next</span><br><span class="line">        <span class="keyword">for</span> <span class="number">_</span> <span class="keyword">in</span> <span class="number">0</span>..&lt;index &#123;</span><br><span class="line">            currentNode = currentNode?.next</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> currentNode!.value!</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 获取链表的第一个元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getFirst</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">get</span>(index: <span class="number">0</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 获取链表的最后一个元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getLast</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="keyword">get</span>(index: size - <span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 查找链表中是否有元素e</span></span><br><span class="line"><span class="class"><span class="keyword">extension</span> <span class="title">LinkedList</span> </span>&#123;</span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">contains</span><span class="params">(e: Element)</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> currentNode = dumyHead.next</span><br><span class="line">        <span class="keyword">while</span> currentNode != <span class="literal">nil</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> currentNode!.value == e &#123;</span><br><span class="line">                <span class="keyword">return</span> <span class="literal">true</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            currentNode = currentNode!.next</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> <span class="literal">false</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// 修改链表的第index个位置的元素为e</span></span><br><span class="line"><span class="class"><span class="keyword">extension</span> <span class="title">LinkedList</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 在链表中不是一个常用的操作</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">set</span><span class="params">(at index: Int, e: Element)</span></span> &#123;</span><br><span class="line">        <span class="keyword">guard</span> index &gt;= <span class="number">0</span> &amp;&amp; index &lt; size <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">fatalError</span>(<span class="string">"Set failed. Illegal index."</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">var</span> currentNode = dumyHead.next</span><br><span class="line">        <span class="keyword">for</span> <span class="number">_</span> <span class="keyword">in</span> <span class="number">0</span>..&lt;index &#123;</span><br><span class="line">            currentNode = currentNode?.next</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        currentNode?.value = e</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="5-删除"><a href="#5-删除" class="headerlink" title="5. 删除"></a>5. 删除</h3><figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/// 在链表中不是一个常用的操作</span></span><br><span class="line"><span class="class"><span class="keyword">extension</span> <span class="title">LinkedList</span> </span>&#123;</span><br><span class="line">    <span class="comment">// 从链表中删除index位置的元素，返回删除的元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">remove</span><span class="params">(at index: Int)</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">guard</span> index &gt;= <span class="number">0</span> &amp;&amp; index &lt;= size <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="built_in">fatalError</span>(<span class="string">"Remove failed. Index is illegal."</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">var</span> preNode = dumyHead</span><br><span class="line">        <span class="keyword">for</span> <span class="number">_</span> <span class="keyword">in</span> <span class="number">0</span>..&lt;index &#123;</span><br><span class="line">            preNode = preNode.next!</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">let</span> removedNode = preNode.next!</span><br><span class="line">        preNode.next = removedNode.next</span><br><span class="line">        removedNode.next = <span class="literal">nil</span></span><br><span class="line">        size -= <span class="number">1</span></span><br><span class="line">        <span class="keyword">return</span> removedNode.value!</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 从链表中删除第一个元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">removeFirst</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> remove(at: <span class="number">0</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 从链表中删除最后一个元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">removeLast</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> remove(at: size - <span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="三、时间复杂度"><a href="#三、时间复杂度" class="headerlink" title="三、时间复杂度"></a>三、时间复杂度</h1><table>
+<thead>
+<tr>
+<th>操作</th>
+<th>复杂度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>增</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>删</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>改</td>
+<td>O(n)</td>
+</tr>
+<tr>
+<td>查</td>
+<td>O(n)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>特别的：</p>
+<ul>
+<li>如果只对链表头进行增、删操作，时间复杂度为：O(1)</li>
+<li>对于链表建议不进行修改、查询操作</li>
+<li>可以对链表查询表头的元素，时间复杂度为：O(1)</li>
+</ul>
+</blockquote>
+<h1 id="四、链表栈"><a href="#四、链表栈" class="headerlink" title="四、链表栈"></a>四、链表栈</h1><p>首先我们来定义栈的接口类：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">Stack</span> </span>&#123;</span><br><span class="line">    <span class="keyword">associatedtype</span> <span class="type">Element</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">push</span><span class="params">(e: Element)</span></span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">pop</span><span class="params">()</span></span> -&gt; <span class="type">Element</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">peek</span><span class="params">()</span></span> -&gt; <span class="type">Element</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来我们使用上面定义的链表 <strong>LinkedList</strong> 来实现链表栈：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LinkedListStack</span>&lt;<span class="title">Element</span>: <span class="title">Equatable</span>&gt;: <span class="title">Stack</span>, <span class="title">CustomStringConvertible</span> </span>&#123;</span><br><span class="line">    <span class="keyword">fileprivate</span> <span class="keyword">var</span> list: <span class="type">LinkedList</span>&lt;<span class="type">Element</span>&gt;!</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">init</span>() &#123;</span><br><span class="line">        list = <span class="type">LinkedList</span>()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.size</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.isEmpty()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">push</span><span class="params">(e: Element)</span></span> &#123;</span><br><span class="line">        list.addFirst(e: e)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">pop</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.removeFirst()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">peek</span><span class="params">()</span></span> -&gt; <span class="type">Element</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> list.getFirst()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">var</span> description: <span class="type">String</span> &#123;</span><br><span class="line">        <span class="keyword">var</span> result = <span class="string">"Stack: top: "</span></span><br><span class="line">        result.append(<span class="string">"\(list!)"</span>)</span><br><span class="line">        <span class="keyword">return</span> result</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试一下：</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">let</span> stack = <span class="type">LinkedListStack</span>&lt;<span class="type">Int</span>&gt;()</span><br><span class="line"><span class="keyword">for</span> index <span class="keyword">in</span> <span class="number">0</span>..&lt;<span class="number">5</span> &#123;</span><br><span class="line">    stack.push(e: index)</span><br><span class="line">    <span class="built_in">print</span>(<span class="string">"\(stack)"</span>)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">stack.pop()</span><br><span class="line"><span class="built_in">print</span>(<span class="string">"\(stack)"</span>)</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>输出为：</p>
+<p><strong>Stack: top: 0-&gt;nill</strong></p>
+<p><strong>Stack: top: 1-&gt;0-&gt;nill</strong></p>
+<p><strong>Stack: top: 2-&gt;1-&gt;0-&gt;nill</strong></p>
+<p><strong>Stack: top: 3-&gt;2-&gt;1-&gt;0-&gt;nill</strong></p>
+<p><strong>Stack: top: 4-&gt;3-&gt;2-&gt;1-&gt;0-&gt;nill</strong></p>
+<p><strong>Stack: top: 3-&gt;2-&gt;1-&gt;0-&gt;nill</strong></p>
+</blockquote>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-12-05T11:00:00.000Z"><a href="/2018/12/05/数据结构与算法之一：栈和队列/">2018-12-05</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/12/05/数据结构与算法之一：栈和队列/">数据结构与算法之一：栈和队列</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h3><p>栈和队列在数据结构中是比较重要的一个数据结构。其实对于栈和队列并不需要太深入的介绍，栈和队列的核心内容是<strong>栈是先进后出、队列是先进先出</strong>。在实际开发中有些场景也可能会用到，比如APP中用户可以撤销操作，比如下棋APP中的悔棋操作，返回上一步就是先进后出（后进先出），也就是栈的特性。比如在销售APP中，为先下订单的用户先出票，就需要用到队列。当然这两个只是在简单场景下的情况，实际开发中可能更复杂，比如售票APP为会员用户优先出票等。</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/stack0.png" alt=""></p>
+<p>接下来就通过 Swift 去实现栈和队列。</p>
+<h3 id="二、实现思路及代码"><a href="#二、实现思路及代码" class="headerlink" title="二、实现思路及代码"></a>二、实现思路及代码</h3><figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">Stack</span>&lt;<span class="title">Element</span>&gt; </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> items = [<span class="type">Element</span>]()</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> items.<span class="built_in">count</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> items.isEmpty</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">// 查看栈顶的元素</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">peek</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>? &#123;</span><br><span class="line">        <span class="keyword">return</span> items.last</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">mutating</span> <span class="function"><span class="keyword">func</span> <span class="title">push</span><span class="params">(<span class="number">_</span> item: Element)</span></span> &#123;</span><br><span class="line">        items.append(item)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">mutating</span> <span class="function"><span class="keyword">func</span> <span class="title">pop</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>? &#123;</span><br><span class="line">        <span class="keyword">return</span> items.popLast()</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">protocol</span> <span class="title">Queue</span> </span>&#123;</span><br><span class="line">    <span class="keyword">associatedtype</span> <span class="type">Element</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span></span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span></span><br><span class="line">    <span class="keyword">mutating</span> <span class="function"><span class="keyword">func</span> <span class="title">enqueue</span><span class="params">(<span class="number">_</span> e: Element)</span></span></span><br><span class="line">    <span class="keyword">mutating</span> <span class="function"><span class="keyword">func</span> <span class="title">dequeue</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>?</span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getFront</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>?</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// dequeue()算法复杂度为O(n)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">ArrayQueue</span>&lt;<span class="title">Element</span>&gt;: <span class="title">Queue</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> items = [<span class="type">Element</span>]()</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> items.<span class="built_in">count</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> items.isEmpty</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">enqueue</span><span class="params">(<span class="number">_</span> e: Element)</span></span> &#123;</span><br><span class="line">        items.append(e)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">dequeue</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>? &#123;</span><br><span class="line">        <span class="keyword">if</span> items.isEmpty &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> items.removeFirst()</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getFront</span><span class="params">()</span></span> -&gt; <span class="type">Element</span>? &#123;</span><br><span class="line">        <span class="keyword">return</span> items.first</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">/// dequeue()均摊复杂度为O(1)</span></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">LoopQueue</span>: <span class="title">Queue</span> </span>&#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> items: <span class="type">NSMutableArray</span>!</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> front = <span class="number">0</span>  <span class="comment">// 队首</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> tail = <span class="number">0</span>  <span class="comment">// 队尾</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> <span class="built_in">count</span> = <span class="number">0</span>  <span class="comment">// 数组的空间大小</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">var</span> size = <span class="number">0</span>  <span class="comment">// 队列元素个数</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">/// 循环队列会有意的浪费一个内存空间大小，所以在声明数组空间大小的时候需要 +1 操作。</span></span><br><span class="line">    <span class="comment">/// - Parameter capacity: 队列的空间大小</span></span><br><span class="line">    <span class="keyword">init</span>(capacity: <span class="type">Int</span>) &#123;</span><br><span class="line">        <span class="built_in">count</span> = capacity + <span class="number">1</span></span><br><span class="line">        items = <span class="type">NSMutableArray</span>(capacity: capacity + <span class="number">1</span>)</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getCapacity</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="built_in">count</span> - <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">isEmpty</span><span class="params">()</span></span> -&gt; <span class="type">Bool</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> front == tail</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getSize</span><span class="params">()</span></span> -&gt; <span class="type">Int</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> size</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">enqueue</span><span class="params">(<span class="number">_</span> e: <span class="keyword">Any</span>)</span></span> &#123;</span><br><span class="line">        <span class="comment">// 判断队列是否已满，进行扩容操作</span></span><br><span class="line">        <span class="keyword">if</span> (tail + <span class="number">1</span>) % <span class="built_in">count</span> == front &#123;</span><br><span class="line">            resize(newCapacity: getCapacity() * <span class="number">2</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        items[tail] = e</span><br><span class="line">        tail = (tail + <span class="number">1</span>) % <span class="built_in">count</span></span><br><span class="line">        size += <span class="number">1</span></span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">dequeue</span><span class="params">()</span></span> -&gt; <span class="type">Any</span>? &#123;</span><br><span class="line">        <span class="keyword">if</span> isEmpty() &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">let</span> temp = items[front]</span><br><span class="line">        front = (front + <span class="number">1</span>) % <span class="built_in">count</span></span><br><span class="line">        size -= <span class="number">1</span></span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 进行缩容操作</span></span><br><span class="line">        <span class="keyword">if</span> size == getCapacity() / <span class="number">4</span> &amp;&amp; getCapacity() / <span class="number">2</span> != <span class="number">0</span> &#123;</span><br><span class="line">            resize(newCapacity: getCapacity() / <span class="number">2</span>)</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> temp</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="function"><span class="keyword">func</span> <span class="title">getFront</span><span class="params">()</span></span> -&gt; <span class="type">Any</span>? &#123;</span><br><span class="line">        <span class="keyword">if</span> isEmpty() &#123;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nil</span></span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">return</span> items[front]</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="function"><span class="keyword">func</span> <span class="title">resize</span><span class="params">(newCapacity: Int)</span></span> &#123;</span><br><span class="line">        <span class="keyword">let</span> newItems = <span class="type">NSMutableArray</span>(capacity: newCapacity + <span class="number">1</span>)</span><br><span class="line">        <span class="keyword">for</span> index <span class="keyword">in</span> <span class="number">0</span>..&lt;size &#123;</span><br><span class="line">            <span class="comment">// 在items中的元素对于newItems中的元素的索引值有front偏移，又因为是循环队列，(index + front)有可能会超过items范围，所以这个索引需要循环起来</span></span><br><span class="line">            newItems[index] = items[(index + front) % <span class="built_in">count</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        items = newItems</span><br><span class="line">        front = <span class="number">0</span></span><br><span class="line">        tail = size</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-11-02T16:00:00.000Z"><a href="/2018/11/03/疯人院Objective-C-Runtime入院第二天——消息传递和消息转发/">2018-11-03</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/11/03/疯人院Objective-C-Runtime入院第二天——消息传递和消息转发/">疯人院Objective-C Runtime入院第二天——消息传递和消息转发</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前越来越多的 APP 都使用了 JSPatch 实现 APP 热修复，而 JSPatch 能做到通过 JS 调用和改写 OC 方法最根本的原因是 Objective-C 是动态语言，OC 上所有方法的调用/类的生成都通过 Objective-C Runtime 在运行时进行，我们可以通过类名/方法名反射得到相应的类和方法，也可以替换某个类的方法为新的实现，理论上你可以在运行时通过类名/方法名调用到任何 OC 方法，替换任何类的实现以及新增任意类。今天就来详细解析一下 Objective-C 中 Runtime 最为吸引人的地方。</p>
+<h1 id="理解-objc-msgSend"><a href="#理解-objc-msgSend" class="headerlink" title="理解 objc_msgSend"></a>理解 objc_msgSend</h1><p>在 Objective-C 中，如果向某对象传递消息，那就会使用动态绑定机制来决定需要调用的方法。在底层，所有方法都是普通的 C 语言函数，然而对象收到消息之后，究竟该调用哪个方法则完全由运行时决定，甚至可以在程序运行时改变，这些特性使得 Objective-C 成为一门真正的动态语言。</p>
+<p>给对象发送消息可以这样来写：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id returnValue = [someObject messageName: parameter];</span><br></pre></td></tr></table></figure>
+<p>在本例中，<code>someObject</code> 叫做 “接收者”（receiver），<code>messageName:</code> 叫做 “选择器”（selector），选择器与参数合起来称为 “消息”（message）。编译器看到此消息后，将其转换为一条标准的 C 语言函数调用，所调用的函数乃是消息传递机制中的核心函数，叫做 <strong>objc_msgSend</strong>，其 “原型”（prototype）如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">void objc_msgSend(id self, SEL cmd, ...)</span><br></pre></td></tr></table></figure>
+<p>这是一个可变参数函数，能接受两个或两个以上的参数。第一个参数代表接收者，第二个参数代表选择器（SEL 是选择器的类型），后续参数就是消息中的那些参数，其顺序不变。选择器指的就是方法的名称。编译器会把刚才那个例子中的消息转换为如下函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id returnValue = objc_msgSend(someObject, @selector(messageName:), parameter);</span><br></pre></td></tr></table></figure>
+<p><code>objc_msgSend</code> 函数会依据接收者与选择器的类型来调用适当的方法。为了完成此操作，该方法需要在接收者所属的类中搜寻其 “方法列表”（list of methods），如果能找到就与选择器名称相符的方法，就跳至其实现代码。若是找不到，那就沿着继承体系继续向上查找，等找到合适的方法之后再跳转。如果最终还是找不到相符的方法，那就执行 “消息转发”（message forwarding）操作。</p>
+<p>这样一看，调用一个方法似乎需要很多步骤。所幸 <code>objc_msgSend</code> 会将匹配结果缓存在 “快速映射表”（fast map）里面，每个类都有这样的一块缓存，若是稍后还向该类发送与选择器相同的消息，那么执行起来就很快了。</p>
+<h1 id="消息传递"><a href="#消息传递" class="headerlink" title="消息传递"></a>消息传递</h1><p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190114153539.png" alt=""></p>
+<p>上图就是消息传递的一个流程：</p>
+<ol>
+<li>先从当前 class 的缓存方法列表（cache methodLists）里去找；</li>
+<li>如果找到了，跳到对应函数实现；</li>
+<li>如果没有找到，就从当前类的方法列表（methodLists）里找；</li>
+<li>如果还没找到，就到 super class 的方法列表里找，直到找到基类（NSObject）为止；</li>
+<li>最后再找不到，就会进入动态方法解析和消息转发流程。</li>
+</ol>
+<p>对于在缓存和方法列表查找过程中的内部实现：</p>
+<ul>
+<li>在缓存查找阶段是哈希查找，给定值是 SEL，目标值是对应 bucket_t 中的 IMP；</li>
+<li>当前类中方法查找，对于已排序好的列表，采用二分查找算法查找；对于没有排序的列表，采用一般遍历查找方法；</li>
+<li>在逐级父类方法查找中，是根据 superClass 指针逐级遍历每一个父类。</li>
+</ul>
+<h1 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h1><p>若想令类能理解某条消息，我们必须实现对应的方法才行。但是，在编译期向类发送了其无法解读的信息并不会报错，因为在运行期可以继续向类中添加方法，所以编译期在编译时还无法确知类中到底会不会有某个方法实现。当对象接收到无法解读的信息后，就会启动 “消息转发”（message forwarding）机制，你可经由此过程告诉对象应该如何处理未知消息。</p>
+<p>你可能在项目中经常遇到这样的报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">unrecognized selector sent to instance</span><br></pre></td></tr></table></figure>
+<p>上面这段异常信息是由 NSObject 的 <code>doesNotRecognizeSelector:</code> 方法所抛出的，此异常表明接收者无法理解该选择器。消息转发过程以应用程序奔溃而告终，不过，开发者在编写自己的类时，可于转发过程中设置挂钩，用以执行预定的逻辑，而不使应用程序奔溃。</p>
+<p>消息转发分为两大阶段。第一阶段先征询接受者，所属的类，看其是否能动态添加方法，以处理当前这个 “未知的选择器”（unknown selector），这叫做 “动态方法解析”（dynamic method resolution）。第二阶段涉及 “完整的消息转发机制”（full forwarding mechanism）。如果运行时系统已经把第一阶段执行完了，那么接收者自己就无法再以动态新增方法的手段来响应包含该选择器的消息了。此时，运行时系统会请求接收者以其他手段来处理与消息相关的方法调用。这又分为两小步。首先，请接收者看看有没有其他对象能处理这条消息。若有，则运行时会把消息转给那个对象，于是消息转发过程结束，一切正常。若没有 “备援的接收者”（replacement receviver），则启动完整的消息转发机制，运行时会把与消息有关的全部细节都封装到 <strong>NSInvocation</strong> 对象中，再给接收者最后一次机会，令其设法解决当前还未处理的这条消息。</p>
+<h3 id="1-动态方法解析"><a href="#1-动态方法解析" class="headerlink" title="1. 动态方法解析"></a>1. 动态方法解析</h3><p>对象在收到无法解读的消息后，首先将调用其所属类的下列类方法：</p>
+<p><code>+ (BOOL)resolveInstanceMethod:(SEL)selector</code></p>
+<p>该方法的参数就是那个未知的选择器，其返回值为 <strong>Boolean</strong> 类型，表示这个类是否能新增一个实例方法用以处理此选择器。在继续往下执行转发机制之前，本类有机会新增一个处理此选择器的方法。假如尚未实现的方法不是实例方法而是类方法，那么运行时系统就会调用另外一个方法，叫做 <code>resolveClassMethod:</code>。</p>
+<p>使用这种方法的前提是：相关方法的实现代码已经写好，只等着运行的时候动态插在类里面就可以了。此方案常用来实现 <strong>@dynamic</strong> 属性，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">@dynamic propertyName;</span><br></pre></td></tr></table></figure>
+<p>这表明我们会为这个属性动态提供存取方法，也就是说编译器不会再默认为我们生成 <strong>set</strong> 和 <strong>get</strong> 方法，而需要我们动态提供。我们可以通过重载 <code>resolveInstanceMethod:</code> 和 <code>resolveClassMethod:</code>方法分别添加实例方法实现和类方法实现。</p>
+<blockquote>
+<p><strong>@dynamic</strong></p>
+<ol>
+<li>动态运行时语言将函数决议推迟到运行时；</li>
+<li>编译时语言在编译期进行函数决议。</li>
+</ol>
+</blockquote>
+<p>因为当 Runtime 系统在 <strong>Cache</strong> 和方法分发表中找不到要执行的方法时，Runtime会调用 <code>resolveInstanceMethod:</code> 来给程序员一次动态添加方法实现的机会。我们需要 <code>class_addMethod</code> 函数完成向特定类添加特定方法实现的操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void otherTestMethod(id self, SEL _cmd) &#123;</span><br><span class="line">    // implementation</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (BOOL)resolveInstanceMethod:(SEL)aSEL &#123;</span><br><span class="line">    if (aSEL == @selector(testMethod)) &#123;</span><br><span class="line">        class_addMethod([self class], aSEL, (IMP)otherTestMethod, &quot;v@:&quot;);</span><br><span class="line">        return YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    return [super resolveInstanceMethod: aSEL];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：</p>
+<ol>
+<li>v@: 表示每一个方法会默认隐藏两个参数，self、cmd，self 代表方法代表方法调用者，cmd 代表这个方法的 SEL，签名类型就是用来描述这个方法的返回值、参数的，v 代表返回值为 void，@ 表示 self，: 表示 cmd；</li>
+<li>动态方法解析会在消息转发机制浸入前执行。如果 <code>respondsToSelector:</code> 或 <code>instanceRespondsToSelector:</code> 方法被执行，动态方法解析器会被首先给予一个提供该方法选择器对应的 IMP 的机会。如果你想让该方法选择器被传送到转发机制，那么就让 <code>resolveInstanceMethod:</code> 返回 NO.</li>
+</ol>
+</blockquote>
+<h4 id="补充：self-和-cmd"><a href="#补充：self-和-cmd" class="headerlink" title="补充：self 和 _cmd"></a>补充：self 和 _cmd</h4><p>我们经常在方法中使用 <strong>self</strong> 关键字来引用实例本身，但从没有想过为什么 <strong>self</strong> 就能取到调用当前方法的对象吧。其实 <strong>self</strong> 的内容是在方法运行时被偷偷的动态传入的。</p>
+<p>在将消息发送的时候，我们知道当 <strong>objc_msgSend</strong> 找到方法对应的实现时，它将直接调用该方法实现，并将消息中所有的参数都传递给方法实现，同时，它还将传递两个隐藏的参数：</p>
+<ul>
+<li>接收消息的对象（也就是 <strong>self</strong> 指向的内容）</li>
+<li>方法选择器（<strong>_cmd</strong> 指向的内容）</li>
+</ul>
+<p>之所以说它们是隐藏的，是因为在源代码方法的定义中并没有声明这两个参数。它们是在代码被编译时被插入实现中的。尽管这些参数没有被明确声明，在源代码中我们仍然可以引用它们。在这两个参数中，<strong>self</strong> 更有用。实际上，它就是方法实现中访问消息接收者对象的实例变量的途径。</p>
+<p>而当方法中的 <strong>super</strong> 关键字接收到消息时，编译器会创建一个 <strong>objc_super</strong> 结构体：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct objc_super &#123;</span><br><span class="line">    __unsafe_unretained id receiver;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这个结构体指明了消息应该被传递给特定超类的定义。</p>
+<p>但 <strong>receiver</strong> 仍然是 <strong>self</strong> 本身，这点需要注意，因为我们想通过 <code>[super class]</code> 获取超类时，编译器只是将指向 <strong>self</strong> 的 <strong>id</strong> 指针和 <strong>class</strong> 的 <strong>SEL</strong> 传递给了 <strong>objc_msgSendSuper</strong> 函数，因为只有在 NSObject 类找到 <code>class</code> 方法，然后 <code>class</code>  方法调用 <code>objc_getClass()</code>，接着调用 <code>objc_msgSend(objc_super -&gt; receiver, @selector(class))</code>，传入的第一个参数是指向 <strong>self</strong> 的 <strong>id</strong> 指针，与调用 <code>[self class]</code> 相同，所以我们得到的永远都是 <strong>self</strong> 的类型。</p>
+<h3 id="2-备援接收者"><a href="#2-备援接收者" class="headerlink" title="2. 备援接收者"></a>2. 备援接收者</h3><p>当前接收者还有第二次机会能处理未知的选择器，在这一步中，运行时会问它：能不能把这条消息转给其他接收者来处理。处理方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (id)forwardingTargetForSelector:(SEL)selector;</span><br></pre></td></tr></table></figure>
+<p>方法参数代表未知的选择器，若当前接收者能找到备援对象，则将其返回，若找不到，就返回 nil。请注意，我们无法操作经由这一步所转发的消息。若是想在发送给备援接收者之前先修改消息内容，那就得通过完整的消息转发机制来做了。</p>
+<h3 id="3-完整的消息转发"><a href="#3-完整的消息转发" class="headerlink" title="3. 完整的消息转发"></a>3. 完整的消息转发</h3><p>如果转发已经来到这一步的话，那么唯一能做的就是启用完整的消息转发机制了。首先创建 <strong>NSInvocation</strong> 对象，把与尚未处理的那条消息有关的全部细节都封于其中。此对象包含选择器、目标（target）及参数。在触发 <strong>NSInvocation</strong> 对象时，”消息派发系统”（message-dispatch system）将亲自出马，把消息指派给目标对象。</p>
+<p>此步骤会调用下面方法来转发消息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (void)forwardInvocation:(NSInvocation *)anInvocation;</span><br></pre></td></tr></table></figure>
+<p>这个方法可以实现得很简单：只需改变调用目标，使消息在新目标上得以调用即可。然而这样实现出来的方法与 “备援接收者” 方案所实现的方法等效，所以很少有人采用这么简单的实现方式。比较有用的实现方式为：在触发消息前，先以某种方式改变消息内容，比如追加另外一个参数，或是改换选择器，等等。</p>
+<p>这里需要注意的是参数 <code>anInvocation</code> 是从哪里来的？其实在 <code>forwardInvocation:</code> 消息发送前，Runtime系统会向对象发送下面这条消息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector;</span><br></pre></td></tr></table></figure>
+<p>返回的方法签名用于生成 <code>NSInvocation</code> 对象。所以我们在重写 <code>forwardInvocation:</code> 的同时也要重写 <code>methodSignatureForSelector:</code> 方法，否则会抛异常。</p>
+<blockquote>
+<p>注意：</p>
+<ol>
+<li><code>methodSignatureForSelector:</code> 用来生成方法签名，这个签名就是给 <code>forwardInvocation:</code> 中的参数 <strong>NSInvocation</strong> 调用的；</li>
+<li>出现 <code>unrecognized selector sent to instance</code>  的报错，就是因为 <code>methodSignatureForSelector:</code> 这个方法中，由于没有找到 对应的方法实现，所以返回了一个空的方法签名，最终导致程序报错奔溃。</li>
+</ol>
+</blockquote>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>下面这张流程图描述了消息转发机制处理消息的各个步骤：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190114153424.png" alt=""></p>
+<p>接收者在每一步中均有机会处理消息。步骤越往后，处理消息的代价就越大。最好能在第一步就处理完，这样的话，运行时系统就可以将此方法缓存起来了。如果这个类的实例稍后还收到同名选择器，那么根本无须启动消息转发流程。若想在第三步里把消息转给备援的接收者，那还不如把转发操作提前到第二步。因为第三步只是修改了调用目标，这项改动放在第二步执行会更为简单，不然的话，还得创建并处理完整的 <strong>NSInvocation</strong>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-11-01T16:00:00.000Z"><a href="/2018/11/02/疯人院Objective-C-Runtime入院第一天——数据结构/">2018-11-02</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/2018/11/02/疯人院Objective-C-Runtime入院第一天——数据结构/">疯人院Objective-C Runtime入院第一天——数据结构</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>Objective-C 是基于 C 语言加入了面向对象特性和消息转发机制的动态语言，这意味着它不仅需要一个编译器，还需要一个运行时系统来动态创建类和对象，执行编译的代码，进行消息传递和转发。</p>
+<p>C 语言中，在编译期，函数的调用就会决定调用哪个函数。而 Objective-C 的函数，属于动态调用过程，在编译期并不能决定真正调用哪个函数，只有在真正运行时才会根据函数的名称找到对应的函数来调用。</p>
+<p>Objective-C 作为一门面向对象的语言，自然具有面向对象语言的特性：封装、继承和多态。它既具有静态语言的特性，又有动态语言的效率，表现为三方面：</p>
+<ul>
+<li><p>动态类型（Dynamic typing）：运行时再决定对象的类型。简单的说，就是 <strong>id</strong> 类型。<strong>id</strong> 可以指向任意类型的对象，然后使用的时候再确定对象本来的类型；</p>
+</li>
+<li><p>动态绑定（Dynamic binding）：即是在实例所属类确定后，将某些属性和相应的方法绑定到实例上。例如 <code>class_addMethod</code> 这个方法就可以动态的添加方法；</p>
+</li>
+<li><p>动态加载（Dynamic loading）：让程序在运行时添加代码模块以及其他资源。用户可以根据需要加载一些可执行代码和资源，而不是在启动时就加载所有组件。</p>
+</li>
+</ul>
+<p>在 Objective-C 中，如果向某对象传递消息，那就会使用动态绑定机制来决定需要调用的方法。在底层，所有的方法都是普通的 C 语言函数，然而对象收到消息之后，究竟该调用哪个方法则完全由运行时决定，甚至可以在程序运行时改变，这些特性使得 Objective-C 成为一门真正的动态语言。</p>
+<p>记得初学 Objective-C 时，把 <code>[objc doSomething]</code> 当成一个简单的方法调用，而无视了 “发送消息” 这句话的深刻含义。后来对 Runtime 的理解慢慢增加了，逐渐明白了 <code>[objc doSomething]</code> 的含义。</p>
+<p>当执行 <code>[objc doSomething]</code> 时会被编译器转化为 <code>objc_msgSend(receiver, selector)</code>，如果消息含有参数时，则为 <code>objc_msgSend(receiver, selector, arg1, arg2, ...)</code>。如果消息的接收者能够找到对应的 <strong>selector</strong>，那么就相当于直接执行了接收者这个对象的特定方法；否则，消息要么被转发，或是临时向接收者动态添加这个 <strong>selector</strong> 对应的实现内容，要么就干脆奔溃掉。</p>
+<p>现在可以看出 <code>[receiver message]</code> 真的不是一个简单的方法调用。因为这只是在编译阶段确定了要向接收者发送 <code>message</code> 这条消息，而 <code>receiver</code> 将要如何响应这条消息，那就要看运行时发生的情况来决定了。</p>
+<h1 id="数据结构"><a href="#数据结构" class="headerlink" title="数据结构"></a>数据结构</h1><p>由于我们在 Objective-C 中大多数类都继承 <strong>NSObject</strong> 类，那我们就以 <strong>NSObject</strong> 为切入点来分析对象的数据结构。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">@interface NSObject &lt;NSObject&gt; &#123;</span><br><span class="line">    Class isa  OBJC_ISA_AVAILABILITY;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们看到它有一个 <strong>Class</strong> 变量，那我们再看一下 <strong>Class</strong> 的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">typedef struct objc_class *Class;</span><br></pre></td></tr></table></figure>
+<p>可以看到它是一个 <strong>objc_class</strong> 指针，那 <strong>objc_class</strong> 是什么呢？</p>
+<h3 id="1-objc-class"><a href="#1-objc-class" class="headerlink" title="1. objc_class"></a>1. objc_class</h3><p>在 objc2.0 之前，<strong>objc_class</strong> 源码是这样子的：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">struct objc_class &#123;</span><br><span class="line">    Class _Nonnull isa  OBJC_ISA_AVAILABILITY;</span><br><span class="line"></span><br><span class="line">#if !__OBJC2__</span><br><span class="line">    Class _Nullable super_class                              OBJC2_UNAVAILABLE;</span><br><span class="line">    const char * _Nonnull name                               OBJC2_UNAVAILABLE;</span><br><span class="line">    long version                                             OBJC2_UNAVAILABLE;</span><br><span class="line">    long info                                                OBJC2_UNAVAILABLE;</span><br><span class="line">    long instance_size                                       OBJC2_UNAVAILABLE;</span><br><span class="line">    struct objc_ivar_list * _Nullable ivars                  OBJC2_UNAVAILABLE;</span><br><span class="line">    struct objc_method_list * _Nullable * _Nullable methodLists                    OBJC2_UNAVAILABLE;</span><br><span class="line">    struct objc_cache * _Nonnull cache                       OBJC2_UNAVAILABLE;</span><br><span class="line">    struct objc_protocol_list * _Nullable protocols          OBJC2_UNAVAILABLE;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">&#125; OBJC2_UNAVAILABLE;</span><br></pre></td></tr></table></figure>
+<p>在这里可以看到，在一个类中，有超类的指针、类名和版本的信息。</p>
+<p>然后在2006年苹果发布 objc2.0 之后，<strong>objc_class</strong> 的定义就变成下面这个样子：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">struct objc_class : objc_object &#123;</span><br><span class="line">    // Class ISA;</span><br><span class="line">    Class superclass;</span><br><span class="line">    cache_t cache;             // formerly cache pointer and vtable</span><br><span class="line">    class_data_bits_t bits;    // class_rw_t * plus custom rr/alloc flags</span><br><span class="line"></span><br><span class="line">    class_rw_t *data() &#123; </span><br><span class="line">        return bits.data();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到 <strong>objc_class</strong> 是一个继承 <strong>objc_object</strong> 的结构体，对应 Objective-C 中使用的 <strong>Class</strong>，<strong>Class</strong> 代表了一个类。接下来看一下该结构体中各属性所代表的含义：</p>
+<ul>
+<li><code>Class superClass</code>：指向当前类的父类；</li>
+<li><code>cache_t cache</code>：提供消息传递过程当中的缓存方法查找；</li>
+<li><code>class_data_bits_t bits</code>：类的基础信息。</li>
+</ul>
+<h3 id="2-cache-t"><a href="#2-cache-t" class="headerlink" title="2. cache_t"></a>2. cache_t</h3><p>先看一下源码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">struct cache_t &#123;</span><br><span class="line">    struct bucket_t *_buckets;</span><br><span class="line">    mask_t _mask;</span><br><span class="line">    mask_t _occupied;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">struct bucket_t &#123;</span><br><span class="line">private:</span><br><span class="line">    cache_key_t _key;</span><br><span class="line">    IMP _imp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">typedef uint32_t mask_t;  // x86_64 &amp; arm64 asm are less efficient with 16-bits</span><br><span class="line">typedef unsigned int uint32_t;</span><br><span class="line"></span><br><span class="line">typedef uintptr_t cache_key_t;</span><br><span class="line">typedef unsigned long uintptr_t;</span><br></pre></td></tr></table></figure>
+<p>根据源码，我们可以知道 <strong>cache_t</strong> 中存储了一个 <strong>bucket_t</strong> 的结构体和两个 <strong>unsigned int</strong> 的变量。</p>
+<ul>
+<li><code>mask</code>：分配用来缓存 <strong>bucket_t</strong> 的总数;</li>
+<li><code>occupied</code>：表明目前实际占用的缓存 <strong>bucket_t</strong> 的个数。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190112204529.png" alt=""></p>
+<p><strong>cache_t</strong> 可以理解为是用数组来实现的，数组中的每一个对象是 <strong>bucket_t</strong> 的结构体。</p>
+<p><strong>bucket_t</strong> 结构体中主要有两个成员变量：</p>
+<ul>
+<li><code>key</code>：对应 Objective-C 中的方法选择器 selector； </li>
+<li><code>IMP</code>：无类型的函数指针，指向一个方法的具体实现。</li>
+</ul>
+<p><strong>cache_t</strong> 的作用主要是为了优化方法调用的性能，用于快速查找方法的执行函数。当对象 receiver 调用方法 message 时，首先根据对象 receiver 的 isa 指针查找到它对应的类，然后在类的 methodLists 中搜索方法，如果没有找到，就使用 superclass 指针到父类中的 methodLists 查找，一旦找到就调用方法。如果没有找到，有可能消息转发，也可能被忽略。但这样查找方式效率太低，因为往往一个类大概只有 20% 的方法经常被调用，占总调用次数的 80%。所以使用 <strong>cache_t</strong> 来缓存经常调用的方法，当调用方法时，优先在 <strong>cache_t</strong> 查找，如果没有找到，才到 methodLists 查找。</p>
+<p>同时 <strong>cache_t</strong> 是可增量扩展的哈希表结构。当存储的量在增大的过程中，会逐渐扩大存储的内存空间，来支持更多的缓存。用哈希表来实现这个数据结构，主要是为了提高查找效率。</p>
+<p>最后 <strong>cache_t</strong> 是局部性原理的最佳应用。</p>
+<h3 id="3-class-data-bits-t"><a href="#3-class-data-bits-t" class="headerlink" title="3. class_data_bits_t"></a>3. class_data_bits_t</h3><p>源码实现如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line">struct class_data_bits_t &#123;</span><br><span class="line"></span><br><span class="line">    // Values are the FAST_ flags above.</span><br><span class="line">    uintptr_t bits;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">struct class_rw_t &#123;</span><br><span class="line">    uint32_t flags;</span><br><span class="line">    uint32_t version;</span><br><span class="line"></span><br><span class="line">    const class_ro_t *ro;</span><br><span class="line"></span><br><span class="line">    method_array_t methods;</span><br><span class="line">    property_array_t properties;</span><br><span class="line">    protocol_array_t protocols;</span><br><span class="line"></span><br><span class="line">    Class firstSubclass;</span><br><span class="line">    Class nextSiblingClass;</span><br><span class="line"></span><br><span class="line">    char *demangledName;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">struct class_ro_t &#123;</span><br><span class="line">    uint32_t flags;</span><br><span class="line">    uint32_t instanceStart;</span><br><span class="line">    uint32_t instanceSize;</span><br><span class="line">#ifdef __LP64__</span><br><span class="line">    uint32_t reserved;</span><br><span class="line">#endif</span><br><span class="line"></span><br><span class="line">    const uint8_t * ivarLayout;</span><br><span class="line">    </span><br><span class="line">    const char * name;</span><br><span class="line">    method_list_t * baseMethodList;</span><br><span class="line">    protocol_list_t * baseProtocols;</span><br><span class="line">    const ivar_list_t * ivars;</span><br><span class="line"></span><br><span class="line">    const uint8_t * weakIvarLayout;</span><br><span class="line">    property_list_t *baseProperties;</span><br><span class="line"></span><br><span class="line">    method_list_t *baseMethods() const &#123;</span><br><span class="line">        return baseMethodList;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190112205440.png" alt=""></p>
+<p>在 <strong>objc_class</strong> 结构体中的注释写到 <strong>class_data_bits_t</strong> 相当于 <strong>class_rw_t</strong> 指针加上 rr/alloc 的标志。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">class_data_bits_t bits; // class_rw_t * plus custom rr/alloc flags</span><br></pre></td></tr></table></figure>
+<p>它为我们提供了便捷方法用于返回其中的 <strong>class_rw_t *</strong> 指针：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">class_rw_t *data() &#123;</span><br><span class="line">    return bits.data();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190112211431.png" alt=""></p>
+<p>Objc 的类的属性、方法、以及遵循的协议在 objc2.0 的版本之后都放在 <strong>class_rw_t</strong> 中。为类创建分类添加的方法、属性和协议都是继承自 <code>list_array_tt</code> 的二维数组。我们就以 <code>methods</code> 为例进行说明。<code>methods</code> 数组中每一个元素都是一维数组，该一维数组中每一个元素是 <strong>method_t</strong> 结构体。比如说我们添加一个分类 A，A 中所有的方法以一个列表的形式作为 <code>methods</code> 数组的第一个元素，分类 B 中所有的方法则为第二个元素，依此类推。</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190112233649.png" alt=""></p>
+<p><strong>class_ro_t</strong> 是一个指向常量的指针，代表了类相关的只读信息，来存储编译器决定了的属性、方法和遵守协议。</p>
+<h3 id="4-method-t"><a href="#4-method-t" class="headerlink" title="4. method_t"></a>4. method_t</h3><p>先来看一下 <strong>method_t</strong> 结构体的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">struct method_t &#123;</span><br><span class="line">    SEL name;</span><br><span class="line">    const char *types;</span><br><span class="line">    IMP imp;</span><br><span class="line"></span><br><span class="line">    struct SortBySELAddress :</span><br><span class="line">        public std::binary_function&lt;const method_t&amp;,</span><br><span class="line">                                    const method_t&amp;, bool&gt;</span><br><span class="line">    &#123;</span><br><span class="line">        bool operator() (const method_t&amp; lhs,</span><br><span class="line">                         const method_t&amp; rhs)</span><br><span class="line">        &#123; return lhs.name &lt; rhs.name; &#125;</span><br><span class="line">    &#125;;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>里面包含3个成员变量：</p>
+<ul>
+<li><code>SEL name</code>：方法的名称，是一个被映射的 C 字符串，它并不是指向具体方法实现；</li>
+<li><code>const char *types</code>：Type Encoding类型编码，对应函数返回值和参数的组合；</li>
+<li><code>IMP imp</code>：无类型的函数指针，指向的是函数的具体实现。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190113112522.png" alt=""></p>
+<p>上图就是 <strong>method_t</strong> 对应函数四要素的关系图。</p>
+<p>这里要重点提一下苹果的 Type Encoding 技术。<code>types</code> 指向一个不可变的字符指针，结构如下图：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190113114006.png" alt=""></p>
+<p>比方说现在有一个方法 <code>- (void)aMethod;</code></p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190113115140.png" alt=""></p>
+<p>它的 <code>types</code> 的值对应的就是 <strong>v@:</strong></p>
+<h3 id="5-objc-object"><a href="#5-objc-object" class="headerlink" title="5. objc_object"></a>5. objc_object</h3><p>前面主要对 <strong>objc_class</strong> 结构体的详细说明，现在来看看 <strong>objc_object</strong>。下面是一个简化版 <strong>objc_object</strong> 的定义，同时还发现了 <strong>id</strong> 的定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">typedef struct objc_object *id;</span><br><span class="line"></span><br><span class="line">struct objc_object &#123;</span><br><span class="line">private:</span><br><span class="line">    isa_t isa;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>从上面可以看出来，<strong>id</strong> 是一个 <strong>objc_object</strong> 类型的指针，以前一直以为 <strong>id</strong> 和 <strong>NSObject</strong> 等价，好无知啊！从上面看 <strong>NSObject</strong> 和 <strong>objc_object</strong> 的定义很像，只不过 <strong>NSObject</strong> 的 <strong>isa</strong> 是一个 <strong>Class</strong>，而 <strong>objc_object</strong> 的 <strong>isa</strong> 是一个 <strong>isa_t</strong>。</p>
+<p>平时使用的对象，都是 <strong>id</strong> 类型的，对应到 Runtime 中实际上代表了 <strong>objc_object</strong> 结构体。该结构体包含以下几个成员部分：</p>
+<ul>
+<li>isa_t：是一个 union 共用体</li>
+<li>关于 isa 操作相关的一些方法，比如说通过 <strong>objc_object</strong> 结构体来获取 isa 所指向的类对象，包括通过类对象的 isa 指针获取它的元类对象</li>
+<li>弱引用相关的方法，比如说标记一个对象，是否曾经有过弱引用指针</li>
+<li>关联对象相关的方法，比如说给对象设置了关联属性，那么关于关联属性的一些相关方法也体现在 <strong>objc_object</strong> 的结构体中</li>
+<li>内存管理相关的方法，比如说在 MRC 下使用到的 retain、release，包括在 ARC 和 MRC 下使用到的 @autoreleasepool。</li>
+</ul>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>下面就以一张图总结本章所讲的内容：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190113135051.png" alt=""></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+
+<nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav></div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Categories</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/iOS/">iOS</a><small>2</small></li>
+  
+    <li><a href="/categories/数据结构与算法/">数据结构与算法</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Objective-C/">Objective-C</a><small>2</small></li>
+  
+    <li><a href="/tags/Swift/">Swift</a><small>2</small></li>
+  
+    <li><a href="/tags/iOS/">iOS</a><small>4</small></li>
+  
+    <li><a href="/tags/数据结构与算法/">数据结构与算法</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2019 Wendell
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

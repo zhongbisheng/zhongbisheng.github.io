@@ -1,0 +1,276 @@
+<!DOCTYPE HTML>
+<html>
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="utf-8">
+  
+  <title>疯人院Objective-C Runtime入院第二天——消息传递和消息转发 | Wendell&#39;s Blog</title>
+  <meta name="author" content="Wendell">
+  
+  <meta name="description" content="前言之前越来越多的 APP 都使用了 JSPatch 实现 APP 热修复，而 JSPatch 能做到通过 JS 调用和改写 OC 方法最根本的原因是 Objective-C 是动态语言，OC 上所有方法的调用/类的生成都通过 Objective-C Runtime 在运行时进行，我们可以通过类名/">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="疯人院Objective-C Runtime入院第二天——消息传递和消息转发">
+  <meta property="og:site_name" content="Wendell&#39;s Blog">
+
+  
+    <meta property="og:image" content="">
+  
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="/atom.xml" title="Wendell&#39;s Blog" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <link rel="stylesheet" href="https://oindk07nf.qnssl.com/atom-one-dark.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  
+
+</head>
+</html>
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">Wendell&#39;s Blog</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+      <li><a href="/">About</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div>
+</header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper"><article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2018-11-02T16:00:00.000Z"><a href="/2018/11/03/疯人院Objective-C-Runtime入院第二天——消息传递和消息转发/">2018-11-03</a></time>
+      
+      
+  
+    <h1 class="title">疯人院Objective-C Runtime入院第二天——消息传递和消息转发</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>之前越来越多的 APP 都使用了 JSPatch 实现 APP 热修复，而 JSPatch 能做到通过 JS 调用和改写 OC 方法最根本的原因是 Objective-C 是动态语言，OC 上所有方法的调用/类的生成都通过 Objective-C Runtime 在运行时进行，我们可以通过类名/方法名反射得到相应的类和方法，也可以替换某个类的方法为新的实现，理论上你可以在运行时通过类名/方法名调用到任何 OC 方法，替换任何类的实现以及新增任意类。今天就来详细解析一下 Objective-C 中 Runtime 最为吸引人的地方。</p>
+<h1 id="理解-objc-msgSend"><a href="#理解-objc-msgSend" class="headerlink" title="理解 objc_msgSend"></a>理解 objc_msgSend</h1><p>在 Objective-C 中，如果向某对象传递消息，那就会使用动态绑定机制来决定需要调用的方法。在底层，所有方法都是普通的 C 语言函数，然而对象收到消息之后，究竟该调用哪个方法则完全由运行时决定，甚至可以在程序运行时改变，这些特性使得 Objective-C 成为一门真正的动态语言。</p>
+<p>给对象发送消息可以这样来写：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id returnValue = [someObject messageName: parameter];</span><br></pre></td></tr></table></figure>
+<p>在本例中，<code>someObject</code> 叫做 “接收者”（receiver），<code>messageName:</code> 叫做 “选择器”（selector），选择器与参数合起来称为 “消息”（message）。编译器看到此消息后，将其转换为一条标准的 C 语言函数调用，所调用的函数乃是消息传递机制中的核心函数，叫做 <strong>objc_msgSend</strong>，其 “原型”（prototype）如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">void objc_msgSend(id self, SEL cmd, ...)</span><br></pre></td></tr></table></figure>
+<p>这是一个可变参数函数，能接受两个或两个以上的参数。第一个参数代表接收者，第二个参数代表选择器（SEL 是选择器的类型），后续参数就是消息中的那些参数，其顺序不变。选择器指的就是方法的名称。编译器会把刚才那个例子中的消息转换为如下函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">id returnValue = objc_msgSend(someObject, @selector(messageName:), parameter);</span><br></pre></td></tr></table></figure>
+<p><code>objc_msgSend</code> 函数会依据接收者与选择器的类型来调用适当的方法。为了完成此操作，该方法需要在接收者所属的类中搜寻其 “方法列表”（list of methods），如果能找到就与选择器名称相符的方法，就跳至其实现代码。若是找不到，那就沿着继承体系继续向上查找，等找到合适的方法之后再跳转。如果最终还是找不到相符的方法，那就执行 “消息转发”（message forwarding）操作。</p>
+<p>这样一看，调用一个方法似乎需要很多步骤。所幸 <code>objc_msgSend</code> 会将匹配结果缓存在 “快速映射表”（fast map）里面，每个类都有这样的一块缓存，若是稍后还向该类发送与选择器相同的消息，那么执行起来就很快了。</p>
+<h1 id="消息传递"><a href="#消息传递" class="headerlink" title="消息传递"></a>消息传递</h1><p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190114153539.png" alt=""></p>
+<p>上图就是消息传递的一个流程：</p>
+<ol>
+<li>先从当前 class 的缓存方法列表（cache methodLists）里去找；</li>
+<li>如果找到了，跳到对应函数实现；</li>
+<li>如果没有找到，就从当前类的方法列表（methodLists）里找；</li>
+<li>如果还没找到，就到 super class 的方法列表里找，直到找到基类（NSObject）为止；</li>
+<li>最后再找不到，就会进入动态方法解析和消息转发流程。</li>
+</ol>
+<p>对于在缓存和方法列表查找过程中的内部实现：</p>
+<ul>
+<li>在缓存查找阶段是哈希查找，给定值是 SEL，目标值是对应 bucket_t 中的 IMP；</li>
+<li>当前类中方法查找，对于已排序好的列表，采用二分查找算法查找；对于没有排序的列表，采用一般遍历查找方法；</li>
+<li>在逐级父类方法查找中，是根据 superClass 指针逐级遍历每一个父类。</li>
+</ul>
+<h1 id="消息转发"><a href="#消息转发" class="headerlink" title="消息转发"></a>消息转发</h1><p>若想令类能理解某条消息，我们必须实现对应的方法才行。但是，在编译期向类发送了其无法解读的信息并不会报错，因为在运行期可以继续向类中添加方法，所以编译期在编译时还无法确知类中到底会不会有某个方法实现。当对象接收到无法解读的信息后，就会启动 “消息转发”（message forwarding）机制，你可经由此过程告诉对象应该如何处理未知消息。</p>
+<p>你可能在项目中经常遇到这样的报错：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">unrecognized selector sent to instance</span><br></pre></td></tr></table></figure>
+<p>上面这段异常信息是由 NSObject 的 <code>doesNotRecognizeSelector:</code> 方法所抛出的，此异常表明接收者无法理解该选择器。消息转发过程以应用程序奔溃而告终，不过，开发者在编写自己的类时，可于转发过程中设置挂钩，用以执行预定的逻辑，而不使应用程序奔溃。</p>
+<p>消息转发分为两大阶段。第一阶段先征询接受者，所属的类，看其是否能动态添加方法，以处理当前这个 “未知的选择器”（unknown selector），这叫做 “动态方法解析”（dynamic method resolution）。第二阶段涉及 “完整的消息转发机制”（full forwarding mechanism）。如果运行时系统已经把第一阶段执行完了，那么接收者自己就无法再以动态新增方法的手段来响应包含该选择器的消息了。此时，运行时系统会请求接收者以其他手段来处理与消息相关的方法调用。这又分为两小步。首先，请接收者看看有没有其他对象能处理这条消息。若有，则运行时会把消息转给那个对象，于是消息转发过程结束，一切正常。若没有 “备援的接收者”（replacement receviver），则启动完整的消息转发机制，运行时会把与消息有关的全部细节都封装到 <strong>NSInvocation</strong> 对象中，再给接收者最后一次机会，令其设法解决当前还未处理的这条消息。</p>
+<h3 id="1-动态方法解析"><a href="#1-动态方法解析" class="headerlink" title="1. 动态方法解析"></a>1. 动态方法解析</h3><p>对象在收到无法解读的消息后，首先将调用其所属类的下列类方法：</p>
+<p><code>+ (BOOL)resolveInstanceMethod:(SEL)selector</code></p>
+<p>该方法的参数就是那个未知的选择器，其返回值为 <strong>Boolean</strong> 类型，表示这个类是否能新增一个实例方法用以处理此选择器。在继续往下执行转发机制之前，本类有机会新增一个处理此选择器的方法。假如尚未实现的方法不是实例方法而是类方法，那么运行时系统就会调用另外一个方法，叫做 <code>resolveClassMethod:</code>。</p>
+<p>使用这种方法的前提是：相关方法的实现代码已经写好，只等着运行的时候动态插在类里面就可以了。此方案常用来实现 <strong>@dynamic</strong> 属性，例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">@dynamic propertyName;</span><br></pre></td></tr></table></figure>
+<p>这表明我们会为这个属性动态提供存取方法，也就是说编译器不会再默认为我们生成 <strong>set</strong> 和 <strong>get</strong> 方法，而需要我们动态提供。我们可以通过重载 <code>resolveInstanceMethod:</code> 和 <code>resolveClassMethod:</code>方法分别添加实例方法实现和类方法实现。</p>
+<blockquote>
+<p><strong>@dynamic</strong></p>
+<ol>
+<li>动态运行时语言将函数决议推迟到运行时；</li>
+<li>编译时语言在编译期进行函数决议。</li>
+</ol>
+</blockquote>
+<p>因为当 Runtime 系统在 <strong>Cache</strong> 和方法分发表中找不到要执行的方法时，Runtime会调用 <code>resolveInstanceMethod:</code> 来给程序员一次动态添加方法实现的机会。我们需要 <code>class_addMethod</code> 函数完成向特定类添加特定方法实现的操作：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">void otherTestMethod(id self, SEL _cmd) &#123;</span><br><span class="line">    // implementation</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">+ (BOOL)resolveInstanceMethod:(SEL)aSEL &#123;</span><br><span class="line">    if (aSEL == @selector(testMethod)) &#123;</span><br><span class="line">        class_addMethod([self class], aSEL, (IMP)otherTestMethod, &quot;v@:&quot;);</span><br><span class="line">        return YES;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    return [super resolveInstanceMethod: aSEL];</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>注意：</p>
+<ol>
+<li>v@: 表示每一个方法会默认隐藏两个参数，self、cmd，self 代表方法代表方法调用者，cmd 代表这个方法的 SEL，签名类型就是用来描述这个方法的返回值、参数的，v 代表返回值为 void，@ 表示 self，: 表示 cmd；</li>
+<li>动态方法解析会在消息转发机制浸入前执行。如果 <code>respondsToSelector:</code> 或 <code>instanceRespondsToSelector:</code> 方法被执行，动态方法解析器会被首先给予一个提供该方法选择器对应的 IMP 的机会。如果你想让该方法选择器被传送到转发机制，那么就让 <code>resolveInstanceMethod:</code> 返回 NO.</li>
+</ol>
+</blockquote>
+<h4 id="补充：self-和-cmd"><a href="#补充：self-和-cmd" class="headerlink" title="补充：self 和 _cmd"></a>补充：self 和 _cmd</h4><p>我们经常在方法中使用 <strong>self</strong> 关键字来引用实例本身，但从没有想过为什么 <strong>self</strong> 就能取到调用当前方法的对象吧。其实 <strong>self</strong> 的内容是在方法运行时被偷偷的动态传入的。</p>
+<p>在将消息发送的时候，我们知道当 <strong>objc_msgSend</strong> 找到方法对应的实现时，它将直接调用该方法实现，并将消息中所有的参数都传递给方法实现，同时，它还将传递两个隐藏的参数：</p>
+<ul>
+<li>接收消息的对象（也就是 <strong>self</strong> 指向的内容）</li>
+<li>方法选择器（<strong>_cmd</strong> 指向的内容）</li>
+</ul>
+<p>之所以说它们是隐藏的，是因为在源代码方法的定义中并没有声明这两个参数。它们是在代码被编译时被插入实现中的。尽管这些参数没有被明确声明，在源代码中我们仍然可以引用它们。在这两个参数中，<strong>self</strong> 更有用。实际上，它就是方法实现中访问消息接收者对象的实例变量的途径。</p>
+<p>而当方法中的 <strong>super</strong> 关键字接收到消息时，编译器会创建一个 <strong>objc_super</strong> 结构体：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">struct objc_super &#123;</span><br><span class="line">    __unsafe_unretained id receiver;</span><br><span class="line">    ...</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>这个结构体指明了消息应该被传递给特定超类的定义。</p>
+<p>但 <strong>receiver</strong> 仍然是 <strong>self</strong> 本身，这点需要注意，因为我们想通过 <code>[super class]</code> 获取超类时，编译器只是将指向 <strong>self</strong> 的 <strong>id</strong> 指针和 <strong>class</strong> 的 <strong>SEL</strong> 传递给了 <strong>objc_msgSendSuper</strong> 函数，因为只有在 NSObject 类找到 <code>class</code> 方法，然后 <code>class</code>  方法调用 <code>objc_getClass()</code>，接着调用 <code>objc_msgSend(objc_super -&gt; receiver, @selector(class))</code>，传入的第一个参数是指向 <strong>self</strong> 的 <strong>id</strong> 指针，与调用 <code>[self class]</code> 相同，所以我们得到的永远都是 <strong>self</strong> 的类型。</p>
+<h3 id="2-备援接收者"><a href="#2-备援接收者" class="headerlink" title="2. 备援接收者"></a>2. 备援接收者</h3><p>当前接收者还有第二次机会能处理未知的选择器，在这一步中，运行时会问它：能不能把这条消息转给其他接收者来处理。处理方法如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (id)forwardingTargetForSelector:(SEL)selector;</span><br></pre></td></tr></table></figure>
+<p>方法参数代表未知的选择器，若当前接收者能找到备援对象，则将其返回，若找不到，就返回 nil。请注意，我们无法操作经由这一步所转发的消息。若是想在发送给备援接收者之前先修改消息内容，那就得通过完整的消息转发机制来做了。</p>
+<h3 id="3-完整的消息转发"><a href="#3-完整的消息转发" class="headerlink" title="3. 完整的消息转发"></a>3. 完整的消息转发</h3><p>如果转发已经来到这一步的话，那么唯一能做的就是启用完整的消息转发机制了。首先创建 <strong>NSInvocation</strong> 对象，把与尚未处理的那条消息有关的全部细节都封于其中。此对象包含选择器、目标（target）及参数。在触发 <strong>NSInvocation</strong> 对象时，”消息派发系统”（message-dispatch system）将亲自出马，把消息指派给目标对象。</p>
+<p>此步骤会调用下面方法来转发消息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (void)forwardInvocation:(NSInvocation *)anInvocation;</span><br></pre></td></tr></table></figure>
+<p>这个方法可以实现得很简单：只需改变调用目标，使消息在新目标上得以调用即可。然而这样实现出来的方法与 “备援接收者” 方案所实现的方法等效，所以很少有人采用这么简单的实现方式。比较有用的实现方式为：在触发消息前，先以某种方式改变消息内容，比如追加另外一个参数，或是改换选择器，等等。</p>
+<p>这里需要注意的是参数 <code>anInvocation</code> 是从哪里来的？其实在 <code>forwardInvocation:</code> 消息发送前，Runtime系统会向对象发送下面这条消息：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector;</span><br></pre></td></tr></table></figure>
+<p>返回的方法签名用于生成 <code>NSInvocation</code> 对象。所以我们在重写 <code>forwardInvocation:</code> 的同时也要重写 <code>methodSignatureForSelector:</code> 方法，否则会抛异常。</p>
+<blockquote>
+<p>注意：</p>
+<ol>
+<li><code>methodSignatureForSelector:</code> 用来生成方法签名，这个签名就是给 <code>forwardInvocation:</code> 中的参数 <strong>NSInvocation</strong> 调用的；</li>
+<li>出现 <code>unrecognized selector sent to instance</code>  的报错，就是因为 <code>methodSignatureForSelector:</code> 这个方法中，由于没有找到 对应的方法实现，所以返回了一个空的方法签名，最终导致程序报错奔溃。</li>
+</ol>
+</blockquote>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>下面这张流程图描述了消息转发机制处理消息的各个步骤：</p>
+<p><img src="https://raw.githubusercontent.com/zhongbisheng/blog_image/master/20190114153424.png" alt=""></p>
+<p>接收者在每一步中均有机会处理消息。步骤越往后，处理消息的代价就越大。最好能在第一步就处理完，这样的话，运行时系统就可以将此方法缓存起来了。如果这个类的实例稍后还收到同名选择器，那么根本无须启动消息转发流程。若想在第三步里把消息转给备援的接收者，那还不如把转发操作提前到第二步。因为第三步只是修改了调用目标，这项改动放在第二步执行会更为简单，不然的话，还得创建并处理完整的 <strong>NSInvocation</strong>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+  
+  <div class="categories">
+    <a href="/categories/iOS/">iOS</a>
+  </div>
+
+        
+  
+  <div class="tags">
+    <a href="/tags/iOS/">iOS</a>, <a href="/tags/Objective-C/">Objective-C</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+      <a class="addthis_button_pinterest_pinit" pi:pinit:layout="horizontal"></a>
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="//s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+
+  
+      <div id="fb-root"></div>
+<script>
+  (function(d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) return;
+    js = d.createElement(s); js.id = id;
+    js.src = "//connect.facebook.net/en_US/all.js#xfbml=1&appId=123456789012345";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
+</script>
+
+<div class="fb-comments" data-href="http://yoursite.com/2018/11/03/疯人院Objective-C-Runtime入院第二天——消息传递和消息转发/index.html" data-num-posts="5" data-width="840" data-colorscheme="light"></div>
+      
+  
+</section>
+
+</div></div>
+    <aside id="sidebar" class="alignright">
+  <div class="search">
+  <form action="//google.com/search" method="get" accept-charset="utf-8">
+    <input type="search" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:yoursite.com">
+  </form>
+</div>
+
+  
+<div class="widget tag">
+  <h3 class="title">Categories</h3>
+  <ul class="entry">
+  
+    <li><a href="/categories/iOS/">iOS</a><small>2</small></li>
+  
+    <li><a href="/categories/数据结构与算法/">数据结构与算法</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+
+  
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Objective-C/">Objective-C</a><small>2</small></li>
+  
+    <li><a href="/tags/Swift/">Swift</a><small>2</small></li>
+  
+    <li><a href="/tags/iOS/">iOS</a><small>4</small></li>
+  
+    <li><a href="/tags/数据结构与算法/">数据结构与算法</a><small>2</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2019 Wendell
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+<script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+<script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
