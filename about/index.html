@@ -10,7 +10,7 @@
   
   <title>
     
-      Wendell&#39;s Blog
+      About | Wendell&#39;s Blog
     
   </title>
   <link href="//cdn.bootcss.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
@@ -137,53 +137,46 @@
   </div>
 </header>
 
-    <div id="article-banner">
-  <h2>Archives</h2>
-  <p class="post-date">文章归档</p>
-</div>
-<main class="app-body" id="archives">
-  
-  
-  
-    <section class="time-section">
-  <h1 class="section-year">
-    2018
-  </h1>
-  <div class="section-list">
-    
-    
-      <div class="section-list-item">
-        <a href="/2018/12/06/数据结构与算法之二：链表/" class="archive-title">数据结构与算法之二：链表</a>
-        <p class="archive-date">12-06</p>
-      </div>
-    
-      <div class="section-list-item">
-        <a href="/2018/12/05/数据结构与算法之一：栈和队列/" class="archive-title">数据结构与算法之一：栈和队列</a>
-        <p class="archive-date">12-05</p>
-      </div>
-    
-      <div class="section-list-item">
-        <a href="/2018/11/03/疯人院Objective-C-Runtime入院第二天——消息传递和消息转发/" class="archive-title">疯人院Objective-C Runtime入院第二天——消息传递和消息转发</a>
-        <p class="archive-date">11-03</p>
-      </div>
-    
-      <div class="section-list-item">
-        <a href="/2018/11/02/疯人院Objective-C-Runtime入院第一天——数据结构/" class="archive-title">疯人院Objective-C Runtime入院第一天——数据结构</a>
-        <p class="archive-date">11-02</p>
-      </div>
-    
+    <div id="about-banner" style="background-image: url(http://file.muyutech.com/about.jpg)"></div>
+<div class="author">
+  <div class="head">
+    <img src="">
   </div>
-</section>
+  <h3>Wendell</h3>
   
-</main>
+    <p class="description">The end is always near.</p>
+  
+  <section class="share-icons">
+    
+      <a class="icon-weibo" href="http://weibo.com/Wendell" target="_blank">
+        <span class="fa-stack fa-lg">
+          <i class="fa fa-circle fa-stack-2x"></i>
+          <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
+        </span>
+      </a>
+    
+    
+    
+    
+    
+    
+  </section>
+</div>
 
 <script>
   (function () {
-    var url = 'http://yoursite.com/archives/2018/11/index.html';
-    $('#article-banner').geopattern(url);
-    $('.header').removeClass('fixed-header');
+    $('.header').removeClass('fixed-header')
+    var windowH = $(window).height();
+    var author = $('.author')
+    var bodyH = author.offset().top + author[0].offsetHeight + 71;
+    if (bodyH < windowH) {
+      author.css({
+        'margin-bottom': windowH - bodyH
+      })
+    }
   })();
 </script>
+
     <div class="scroll-top">
   <span class="arrow-icon"></span>
 </div>
